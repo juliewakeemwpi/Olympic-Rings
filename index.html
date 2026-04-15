@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title> Olympic Rings Scoreboard</title>
+<title>Hoop Game Scoreboard</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap');
 
@@ -370,7 +370,7 @@
 
 <!-- HEADER -->
 <header>
-  <div class="logo">🏀 Olympic Rings</div>
+  <div class="logo">🏀 HOOP GAME</div>
   <div style="display:flex;align-items:center;gap:10px;">
     <span class="status-dot" id="statusDot"></span>
     <span id="statusText">Not connected</span>
@@ -385,8 +385,8 @@
 
 <!-- SETUP VIEW -->
 <div class="view active" id="setupView">
-  <div class="setup-title">Olympic Rings</div>
-  <p class="setup-subtitle">Olympic Rings Championship</p>
+  <div class="setup-title">HOOP GAME</div>
+  <p class="setup-subtitle">4-Hoop Ball Throw Championship</p>
 
   <div class="setup-card">
     <div>
@@ -487,8 +487,12 @@ if (!('serial' in navigator)) {
 
 async function connectArduino() {
   try {
+    console.log('[Serial] Requesting port...');
     port = await navigator.serial.requestPort();
+
+    console.log('[Serial] Opening port at 9600 baud...');
     await port.open({ baudRate: 9600 });
+    console.log('[Serial] Port opened successfully');
 
     const statusDot  = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
@@ -500,40 +504,82 @@ async function connectArduino() {
     document.getElementById('connectNotice').style.display = 'none';
     connected = true;
 
-    // Setup writer
-    const textEncoder = new TextEncoderStream();
-    textEncoder.readable.pipeTo(port.writable);
-    writer = textEncoder.writable.getWriter();
-
-    // Setup reader
-    const textDecoder = new TextDecoderStream();
-    port.readable.pipeTo(textDecoder.writable);
-    const reader = textDecoder.readable.getReader();
-
-    // Read loop
-    (async () => {
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        if (value) {
-          value.split('\n').forEach(line => {
-            line = line.trim();
-            if (line) handleArduinoMessage(line);
-          });
-        }
+    // Setup writer using raw writable stream
+    const writeEncoder = new TextEncoder();
+    const writableStream = port.writable;
+    const writeStreamWriter = writableStream.getWriter();
+    writer = {
+      write: async (msg) => {
+        const data = writeEncoder.encode(msg);
+        await writeStreamWriter.write(data);
       }
-    })();
+    };
+    console.log('[Serial] Writer ready');
+
+    // Setup reader using manual chunked reading (more compatible)
+    readLoop(port);
 
   } catch (err) {
-    console.error('Serial connection failed:', err);
-    document.getElementById('statusText').textContent = 'Connection failed';
+    console.error('[Serial] Connection failed:', err);
+    document.getElementById('statusText').textContent = 'Connection failed — ' + err.message;
     document.getElementById('statusDot').className = 'status-dot error';
   }
 }
 
+// Separate robust read loop with buffer handling
+async function readLoop(port) {
+  const decoder = new TextDecoder();
+  let buffer = '';
+  console.log('[Serial] Read loop started');
+
+  while (port.readable) {
+    const reader = port.readable.getReader();
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+          console.log('[Serial] Reader done');
+          reader.releaseLock();
+          break;
+        }
+        if (value) {
+          // Decode raw bytes into string
+          const chunk = decoder.decode(value, { stream: true });
+          console.log('[Serial] Raw chunk received:', JSON.stringify(chunk));
+          buffer += chunk;
+
+          // Split on newlines and process complete lines
+          const lines = buffer.split('\n');
+          // Keep the last incomplete line in the buffer
+          buffer = lines.pop();
+
+          lines.forEach(line => {
+            line = line.trim();
+            if (line.length > 0) {
+              console.log('[Serial] Complete message:', line);
+              handleArduinoMessage(line);
+            }
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[Serial] Read error:', err);
+      reader.releaseLock();
+    }
+  }
+  console.log('[Serial] Port no longer readable — connection lost');
+  document.getElementById('statusDot').className = 'status-dot error';
+  document.getElementById('statusText').textContent = 'Disconnected';
+}
+
 async function sendToArduino(msg) {
   if (writer) {
-    try { await writer.write(msg + '\n'); } catch(e) {}
+    try {
+      await writer.write(msg + '\n');
+      console.log('[Serial] Sent to Arduino:', msg);
+    } catch(e) {
+      console.error('[Serial] Send failed:', e);
+    }
   }
 }
 
@@ -634,10 +680,16 @@ function gameTick() {
 
 // ─── HANDLE ARDUINO MESSAGE ───────────────────────────────────────────────────
 function handleArduinoMessage(msg) {
-  if (!gameActive || awaitingNextTurn) return;
+  console.log('[Game] handleArduinoMessage called with:', msg, '| gameActive:', gameActive, '| awaitingNextTurn:', awaitingNextTurn);
+
+  if (!gameActive || awaitingNextTurn) {
+    console.log('[Game] Ignoring message — game not active or awaiting turn switch');
+    return;
+  }
 
   if (msg.startsWith('HOOP:')) {
     const hoop = parseInt(msg.split(':')[1]);
+    console.log('[Game] HOOP detected! Hoop number:', hoop, 'Current player:', currentPlayer);
     if (currentPlayer === 1) scoreP1++; else scoreP2++;
     sendToArduino('BEEP:SUCCESS');
     showToast(`HOOP ${hoop}! 🏀`, `Player ${currentPlayer} scores!`, 'score');
