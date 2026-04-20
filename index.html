@@ -79,6 +79,8 @@
   .action-btn.gold  { background: var(--yellow); color: #0b0f1a; }
   .action-btn.back  { background: var(--surface); color: var(--dim); border: 1px solid var(--border); font-size: 1rem; }
   .action-btn.back:hover { color: var(--text); border-color: var(--text); }
+  .action-btn.danger { background: #2a0a0a; color: var(--p2); border: 1px solid var(--p2); font-size: 1rem; }
+  .action-btn.danger:hover { background: var(--p2); color: #fff; }
   .connect-notice { font-size: 0.8rem; color: var(--yellow); text-align: center; }
 
   /* ── DIFFICULTY BUTTONS ── */
@@ -314,6 +316,7 @@
       <div class="info-block"><div class="info-block-label">Throw Timer</div><div class="info-block-val" id="throwTimerVal">10s</div></div>
       <div class="info-block"><div class="info-block-label">Game Time Left</div><div class="info-block-val" id="gameTimerVal">20:00</div></div>
     </div>
+    <button class="action-btn danger" style="max-width:100%;margin-top:4px;" onclick="confirmEndGame('timed')">⏹ END GAME EARLY</button>
   </div>
 </div>
 
@@ -344,6 +347,7 @@
       <div class="info-block"><div class="info-block-label">Time Left</div><div class="info-block-val" id="colorThrowTimerVal">15s</div></div>
       <div class="info-block"><div class="info-block-label">Game Time</div><div class="info-block-val" id="colorGameTimerVal">20:00</div></div>
     </div>
+    <button class="action-btn danger" style="max-width:100%;margin-top:4px;" onclick="confirmEndGame('color')">⏹ END GAME EARLY</button>
   </div>
 </div>
 
@@ -505,10 +509,8 @@ function timedTick() {
   if (gLeft <= 0) { endGame('timed'); return; }
   if (tLeft <= 0 && !awaitingNextTurn) {
     awaitingNextTurn = true;
-    const loser = currentPlayer, winner = currentPlayer === 1 ? 2 : 1;
-    if (winner === 1) scoreP1++; else scoreP2++;
     sendToArduino('BEEP:FAIL');
-    showToast('MISSED!', `Player ${loser} missed — Player ${winner} scores!`, 'miss');
+    showToast('MISSED!', `Player ${currentPlayer} missed — switching turns`, 'miss');
     setTimeout(timedSwitch, 1900);
   }
 }
@@ -628,10 +630,8 @@ function colorTick() {
   if (gLeft <= 0) { endGame('color'); return; }
   if (tLeft <= 0 && !colorAwaitingNext) {
     colorAwaitingNext = true;
-    const loser = colorCurrentPlayer, winner = colorCurrentPlayer === 1 ? 2 : 1;
-    if (winner === 1) colorScoreP1++; else colorScoreP2++;
     sendToArduino('BEEP:FAIL');
-    showToast('TIME UP! ⏰', `Player ${loser} ran out of time — Player ${winner} scores!`, 'miss');
+    showToast('TIME UP! ⏰', `Player ${colorCurrentPlayer} ran out of time — switching turns`, 'miss');
     setTimeout(colorSwitch, 1900);
   }
 }
@@ -691,17 +691,22 @@ function handleArduinoMessage(msg) {
         sendToArduino('BEEP:CLICK');
       }
     } else {
-      // Wrong hoop
+      // Wrong hoop — no point awarded, just switch turns
       const rightColor = HOOP_COLORS[expected];
-      const loser = colorCurrentPlayer, winner = colorCurrentPlayer === 1 ? 2 : 1;
-      if (winner === 1) colorScoreP1++; else colorScoreP2++;
       sendToArduino('BEEP:FAIL');
-      showToast('WRONG HOOP! ❌', `Expected ${rightColor.name} — Player ${winner} scores!`, 'wrong');
+      showToast('WRONG RING! ❌', `Expected ${rightColor.name} — switching turns`, 'wrong');
       colorAwaitingNext = true;
-      updateColorBoard();
       setTimeout(colorSwitch, 1900);
     }
   }
+}
+
+// ══════════════════════════════════════════════════════
+// END GAME EARLY
+// ══════════════════════════════════════════════════════
+function confirmEndGame(mode) {
+  const confirmed = window.confirm('End the game now and see the results?');
+  if (confirmed) endGame(mode);
 }
 
 // ══════════════════════════════════════════════════════
