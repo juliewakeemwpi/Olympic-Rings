@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Olympic Rings Scoreboard</title>
+<title>Hoop Game Scoreboard</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap');
 
@@ -20,357 +20,175 @@
     --text: #e2e8f0;
     --dim: #475569;
     --accent: #38bdf8;
+    --hoop-red: #ef4444;
+    --hoop-green: #22c55e;
+    --hoop-yellow: #f59e0b;
+    --hoop-blue: #3b82f6;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
 
   /* ── HEADER ── */
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 28px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-  }
-  .logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.8rem;
-    letter-spacing: 4px;
-    color: var(--accent);
-  }
-  .status-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    background: var(--dim);
-    display: inline-block;
-    margin-right: 8px;
-    transition: background 0.3s;
-  }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 4px; color: var(--accent); }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--dim); display: inline-block; margin-right: 8px; transition: background 0.3s; }
   .status-dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); }
   .status-dot.error { background: var(--p2); }
   #statusText { font-size: 0.8rem; color: var(--dim); }
-  #connectBtn {
-    background: var(--accent);
-    color: #0b0f1a;
-    border: none;
-    padding: 8px 18px;
-    border-radius: 8px;
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: opacity 0.2s;
-  }
+  #connectBtn { background: var(--accent); color: #0b0f1a; border: none; padding: 8px 18px; border-radius: 8px; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: opacity 0.2s; }
   #connectBtn:hover { opacity: 0.85; }
   #connectBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  /* ── MAIN VIEWS ── */
-  .view { display: none; flex: 1; flex-direction: column; }
+  /* ── VIEWS ── */
+  .view { display: none; flex: 1; flex-direction: column; overflow-y: auto; }
   .view.active { display: flex; }
 
-  /* ── SETUP VIEW ── */
-  #setupView {
-    align-items: center;
-    justify-content: center;
-    gap: 32px;
-    padding: 40px 20px;
-  }
+  /* ── MODE SELECT ── */
+  #modeView { align-items: center; justify-content: center; gap: 28px; padding: 40px 20px; }
+  .mode-title { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; letter-spacing: 6px; color: var(--accent); text-align: center; text-shadow: 0 0 40px rgba(56,189,248,0.3); }
+  .mode-subtitle { color: var(--dim); font-size: 0.9rem; text-align: center; margin-top: -16px; }
+  .mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 760px; }
+  .mode-card { background: var(--surface); border: 2px solid var(--border); border-radius: 20px; padding: 32px 28px; cursor: pointer; transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s; display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center; }
+  .mode-card:hover { transform: translateY(-3px); }
+  .mode-card.timed:hover { border-color: var(--p1); box-shadow: 0 8px 30px rgba(59,130,246,0.2); }
+  .mode-card.color:hover { border-color: var(--yellow); box-shadow: 0 8px 30px rgba(245,158,11,0.2); }
+  .mode-icon { font-size: 3rem; }
+  .mode-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 3px; }
+  .mode-card.timed .mode-name { color: var(--p1); }
+  .mode-card.color .mode-name { color: var(--yellow); }
+  .mode-desc { font-size: 0.8rem; color: var(--dim); line-height: 1.5; }
+  .mode-connect-notice { font-size: 0.8rem; color: var(--yellow); text-align: center; }
 
-  .setup-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 3.5rem;
-    letter-spacing: 6px;
-    color: var(--accent);
-    text-align: center;
-    text-shadow: 0 0 40px rgba(56,189,248,0.3);
-  }
-  .setup-subtitle {
-    color: var(--dim);
-    font-size: 0.9rem;
-    text-align: center;
-    margin-top: -20px;
-  }
-
-  .setup-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 32px 40px;
-    width: 100%;
-    max-width: 520px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-
-  .field-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--dim);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .stepper {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  .stepper-val {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.8rem;
-    color: var(--text);
-    min-width: 80px;
-    text-align: center;
-  }
-  .stepper-unit {
-    font-size: 0.85rem;
-    color: var(--dim);
-  }
-  .step-btn {
-    width: 44px; height: 44px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    color: var(--text);
-    font-size: 1.4rem;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-    display: flex; align-items: center; justify-content: center;
-  }
+  /* ── SHARED SETUP ELEMENTS ── */
+  .setup-inner { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 24px; padding: 36px 20px; }
+  .setup-title { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; letter-spacing: 5px; text-align: center; }
+  .setup-title.timed { color: var(--p1); }
+  .setup-title.color { color: var(--yellow); }
+  .setup-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px 36px; width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 22px; }
+  .field-label { font-size: 0.75rem; font-weight: 600; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+  .stepper { display: flex; align-items: center; gap: 16px; }
+  .stepper-val { font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem; color: var(--text); min-width: 80px; text-align: center; }
+  .stepper-unit { font-size: 0.85rem; color: var(--dim); }
+  .step-btn { width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 1.4rem; cursor: pointer; transition: background 0.15s, border-color 0.15s; display: flex; align-items: center; justify-content: center; }
   .step-btn:hover { background: var(--border); border-color: var(--accent); color: var(--accent); }
+  .action-btn { border: none; padding: 15px; border-radius: 12px; font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 3px; cursor: pointer; transition: opacity 0.2s, transform 0.1s; width: 100%; max-width: 520px; }
+  .action-btn:hover { opacity: 0.9; transform: scale(1.01); }
+  .action-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+  .action-btn.green { background: var(--green); color: #0b0f1a; }
+  .action-btn.gold  { background: var(--yellow); color: #0b0f1a; }
+  .action-btn.back  { background: var(--surface); color: var(--dim); border: 1px solid var(--border); font-size: 1rem; }
+  .action-btn.back:hover { color: var(--text); border-color: var(--text); }
+  .connect-notice { font-size: 0.8rem; color: var(--yellow); text-align: center; }
 
-  #startBtn {
-    background: var(--green);
-    color: #0b0f1a;
-    border: none;
-    padding: 16px;
-    border-radius: 12px;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.5rem;
-    letter-spacing: 3px;
-    cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
-    width: 100%;
-    max-width: 520px;
-  }
-  #startBtn:hover { opacity: 0.9; transform: scale(1.01); }
-  #startBtn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+  /* ── DIFFICULTY BUTTONS ── */
+  .diff-row { display: flex; gap: 10px; width: 100%; max-width: 520px; }
+  .diff-btn { flex: 1; padding: 13px 6px; border-radius: 12px; border: 2px solid var(--border); background: var(--surface); color: var(--dim); font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; letter-spacing: 2px; cursor: pointer; transition: all 0.15s; text-align: center; }
+  .diff-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+  .diff-btn.active { border-color: var(--yellow); background: #2a1f00; color: var(--yellow); }
+  .diff-sub { font-family: 'Inter', sans-serif; font-size: 0.62rem; color: var(--dim); letter-spacing: 0; display: block; margin-top: 2px; }
+  .diff-btn.active .diff-sub { color: var(--yellow); opacity: 0.7; }
 
-  .connect-notice {
-    font-size: 0.8rem;
-    color: var(--yellow);
-    text-align: center;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
+  /* ── HOOP LEGEND ── */
+  .hoop-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 520px; }
+  .hoop-legend-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 9px 13px; font-size: 0.8rem; }
+  .hoop-dot { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; }
 
-  /* ── GAME VIEW ── */
-  #gameView {
-    padding: 20px 24px;
-    gap: 16px;
-  }
-
-  .scoreboard {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-
-  .player-card {
-    border-radius: 16px;
-    padding: 28px 24px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    position: relative;
-    transition: box-shadow 0.3s;
-  }
+  /* ── TIMED GAME VIEW ── */
+  #gameView { padding: 20px 24px; gap: 16px; }
+  .scoreboard { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .player-card { border-radius: 16px; padding: 28px 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: box-shadow 0.3s; }
   .player-card.p1 { background: var(--p1-dim); border: 2px solid var(--p1); }
   .player-card.p2 { background: var(--p2-dim); border: 2px solid var(--p2); }
-  .player-card.active-turn { box-shadow: 0 0 30px rgba(255,255,255,0.15); }
   .player-card.p1.active-turn { box-shadow: 0 0 30px rgba(59,130,246,0.5); }
   .player-card.p2.active-turn { box-shadow: 0 0 30px rgba(239,68,68,0.5); }
-
-  .player-label {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.4rem;
-    letter-spacing: 4px;
-    opacity: 0.8;
-  }
-  .player-score {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 7rem;
-    line-height: 1;
-    transition: transform 0.15s;
-  }
+  .player-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 4px; opacity: 0.8; }
+  .player-score { font-family: 'Bebas Neue', sans-serif; font-size: 7rem; line-height: 1; transition: transform 0.15s; }
   .player-score.bump { transform: scale(1.15); }
   .player-card.p1 .player-score { color: var(--p1); }
   .player-card.p2 .player-score { color: var(--p2); }
-
-  .turn-badge {
-    display: none;
-    background: white;
-    color: #0b0f1a;
-    font-weight: 700;
-    font-size: 0.7rem;
-    letter-spacing: 2px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    text-transform: uppercase;
-  }
+  .turn-badge { display: none; background: white; color: #0b0f1a; font-weight: 700; font-size: 0.7rem; letter-spacing: 2px; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; }
   .active-turn .turn-badge { display: block; }
-
-  /* ── GAME INFO BAR ── */
-  .info-bar {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px 28px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
-    align-items: center;
-  }
-
+  .info-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 28px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: center; }
   .info-block { text-align: center; }
-  .info-block-label {
-    font-size: 0.68rem;
-    color: var(--dim);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-  .info-block-val {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.2rem;
-    color: var(--text);
-    line-height: 1;
-  }
+  .info-block-label { font-size: 0.68rem; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  .info-block-val { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--text); line-height: 1; }
   #throwTimerVal { color: var(--yellow); }
   #throwTimerVal.urgent { color: var(--p2); animation: pulse 0.5s infinite alternate; }
   #gameTimerVal { color: var(--accent); }
 
-  @keyframes pulse { from { opacity: 1; } to { opacity: 0.4; } }
+  /* ── COLOR GAME VIEW ── */
+  #colorGameView { padding: 14px 20px; gap: 12px; }
+  .color-scoreboard { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .color-player-card { border-radius: 14px; padding: 16px 20px; display: flex; flex-direction: column; align-items: center; gap: 5px; transition: box-shadow 0.3s; }
+  .color-player-card.p1 { background: var(--p1-dim); border: 2px solid var(--p1); }
+  .color-player-card.p2 { background: var(--p2-dim); border: 2px solid var(--p2); }
+  .color-player-card.p1.active-turn { box-shadow: 0 0 25px rgba(59,130,246,0.5); }
+  .color-player-card.p2.active-turn { box-shadow: 0 0 25px rgba(239,68,68,0.5); }
+  .color-player-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 3px; opacity: 0.8; }
+  .color-player-score { font-family: 'Bebas Neue', sans-serif; font-size: 4.5rem; line-height: 1; }
+  .color-player-card.p1 .color-player-score { color: var(--p1); }
+  .color-player-card.p2 .color-player-score { color: var(--p2); }
+  .color-turn-badge { display: none; background: white; color: #0b0f1a; font-weight: 700; font-size: 0.65rem; letter-spacing: 2px; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; }
+  .active-turn .color-turn-badge { display: block; }
 
-  /* ── EVENT TOAST ── */
-  #toast {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.8);
-    background: var(--surface);
-    border: 2px solid var(--border);
-    border-radius: 20px;
-    padding: 28px 48px;
-    text-align: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
-    z-index: 100;
-    min-width: 360px;
-  }
-  #toast.show {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  #toast.score { border-color: var(--green); }
-  #toast.miss  { border-color: var(--p2); }
-  #toastTitle {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.2rem;
-    letter-spacing: 3px;
-    margin-bottom: 6px;
-  }
-  #toastSub { font-size: 0.9rem; color: var(--dim); }
+  /* Sequence panel */
+  .sequence-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 22px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .sequence-label { font-size: 0.7rem; color: var(--dim); letter-spacing: 3px; text-transform: uppercase; }
+  .sequence-hoops { display: flex; gap: 20px; align-items: center; justify-content: center; flex-wrap: wrap; }
+  .seq-hoop { display: flex; flex-direction: column; align-items: center; gap: 6px; opacity: 0.3; transition: opacity 0.3s, transform 0.3s; }
+  .seq-hoop.active-seq { opacity: 1; transform: scale(1.1); }
+  .seq-hoop.completed-seq { opacity: 0.5; }
+  .seq-circle { width: 68px; height: 68px; border-radius: 50%; border: 3px solid transparent; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem; letter-spacing: 1px; }
+  .seq-hoop-num { font-size: 0.62rem; color: var(--dim); letter-spacing: 1px; }
+  .seq-progress { display: flex; gap: 8px; }
+  .seq-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.2s; }
+  .seq-dot.done { background: var(--green); }
+  .seq-dot.current { background: var(--yellow); }
+
+  /* Color info bar */
+  .color-info-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 22px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: center; }
+  #colorThrowTimerVal { color: var(--yellow); }
+  #colorThrowTimerVal.urgent { color: var(--p2); animation: pulse 0.5s infinite alternate; }
+  #colorGameTimerVal { color: var(--accent); }
+  #difficultyVal { color: var(--yellow); }
 
   /* ── WINNER VIEW ── */
-  #winnerView {
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
-    padding: 40px 20px;
-    text-align: center;
-  }
-
-  .winner-label {
-    font-size: 0.85rem;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    color: var(--dim);
-  }
-  .winner-name {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 5rem;
-    letter-spacing: 6px;
-    line-height: 1;
-  }
+  #winnerView { align-items: center; justify-content: center; gap: 22px; padding: 40px 20px; text-align: center; }
+  .winner-label { font-size: 0.85rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); }
+  .winner-mode-badge { font-size: 0.72rem; letter-spacing: 2px; color: var(--dim); background: var(--surface); border: 1px solid var(--border); padding: 4px 14px; border-radius: 20px; }
+  .winner-name { font-family: 'Bebas Neue', sans-serif; font-size: 5rem; letter-spacing: 6px; line-height: 1; }
   .winner-name.p1 { color: var(--p1); }
   .winner-name.p2 { color: var(--p2); }
   .winner-name.tie { color: var(--yellow); }
-
-  .final-scores {
-    display: flex;
-    gap: 32px;
-    align-items: center;
-  }
+  .final-scores { display: flex; gap: 32px; align-items: center; }
   .final-score-block { text-align: center; }
   .final-score-block .name { font-size: 0.75rem; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
-  .final-score-block .score {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 4rem;
-    line-height: 1;
-  }
+  .final-score-block .score { font-family: 'Bebas Neue', sans-serif; font-size: 4rem; line-height: 1; }
   .final-score-block.p1 .score { color: var(--p1); }
   .final-score-block.p2 .score { color: var(--p2); }
   .vs-divider { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--dim); }
 
-  #playAgainBtn {
-    background: var(--green);
-    color: #0b0f1a;
-    border: none;
-    padding: 14px 48px;
-    border-radius: 12px;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.4rem;
-    letter-spacing: 3px;
-    cursor: pointer;
-    transition: opacity 0.2s;
-  }
-  #playAgainBtn:hover { opacity: 0.85; }
+  /* ── TOAST ── */
+  #toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: var(--surface); border: 2px solid var(--border); border-radius: 20px; padding: 26px 44px; text-align: center; opacity: 0; pointer-events: none; transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1); z-index: 100; min-width: 320px; }
+  #toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  #toast.score { border-color: var(--green); }
+  #toast.miss  { border-color: var(--p2); }
+  #toast.wrong { border-color: var(--p2); }
+  #toastTitle { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 3px; margin-bottom: 5px; }
+  #toastSub { font-size: 0.85rem; color: var(--dim); }
 
-  /* ── NO SERIAL NOTICE ── */
-  #noSerialBanner {
-    display: none;
-    background: rgba(245,158,11,0.1);
-    border: 1px solid var(--yellow);
-    border-radius: 10px;
-    padding: 10px 18px;
-    font-size: 0.78rem;
-    color: var(--yellow);
-    text-align: center;
-    margin: 0 24px;
-  }
+  #noSerialBanner { display: none; background: rgba(245,158,11,0.1); border: 1px solid var(--yellow); border-radius: 10px; padding: 10px 18px; font-size: 0.78rem; color: var(--yellow); text-align: center; margin: 8px 24px 0; }
+
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0.4; } }
+  @keyframes seqFlash { 0%,100% { transform: scale(1.1); } 50% { transform: scale(1.25); } }
+  .seq-hoop.flash { animation: seqFlash 0.3s ease; }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header>
-  <div class="logo">🏀 Olympic Rings</div>
+  <div class="logo">🏀 HOOP GAME</div>
   <div style="display:flex;align-items:center;gap:10px;">
     <span class="status-dot" id="statusDot"></span>
     <span id="statusText">Not connected</span>
@@ -378,393 +196,537 @@
   <button id="connectBtn">Connect Arduino</button>
 </header>
 
-<!-- NO SERIAL SUPPORT BANNER -->
-<div id="noSerialBanner">
-  ⚠ Web Serial is only supported in Chrome or Edge. Please open this page in Chrome for Arduino connectivity.
-</div>
+<div id="noSerialBanner">⚠ Web Serial is only supported in Chrome or Edge.</div>
 
-<!-- SETUP VIEW -->
-<div class="view active" id="setupView">
-  <div class="setup-title">Olympic Rings</div>
-  <p class="setup-subtitle">4-Hoop Championship</p>
-
-  <div class="setup-card">
-    <div>
-      <div class="field-label">Throw Time Per Turn</div>
-      <div class="stepper">
-        <button class="step-btn" onclick="adjust('throwTime', -1)">−</button>
-        <div>
-          <span class="stepper-val" id="throwTimeVal">10</span>
-          <span class="stepper-unit"> seconds</span>
-        </div>
-        <button class="step-btn" onclick="adjust('throwTime', 1)">+</button>
-      </div>
+<!-- ══ MODE SELECT ══ -->
+<div class="view active" id="modeView">
+  <div class="mode-title">HOOP GAME</div>
+  <p class="mode-subtitle">Select a game mode to continue</p>
+  <div class="mode-cards">
+    <div class="mode-card timed" onclick="selectMode('timed')">
+      <div class="mode-icon">⏱️</div>
+      <div class="mode-name">Timed Competition</div>
+      <div class="mode-desc">Classic mode. Players take turns throwing through any hoop within the time limit. Score points and outlast your opponent over a set game duration.</div>
     </div>
-    <div>
-      <div class="field-label">Total Game Duration</div>
-      <div class="stepper">
-        <button class="step-btn" onclick="adjust('gameDuration', -1)">−</button>
-        <div>
-          <span class="stepper-val" id="gameDurationVal">20</span>
-          <span class="stepper-unit"> minutes</span>
-        </div>
-        <button class="step-btn" onclick="adjust('gameDuration', 1)">+</button>
-      </div>
+    <div class="mode-card color" onclick="selectMode('color')">
+      <div class="mode-icon">🎨</div>
+      <div class="mode-name">Color Competition</div>
+      <div class="mode-desc">Memory challenge mode. A color sequence appears on screen. Throw through the matching hoops in the correct order before time runs out to score!</div>
     </div>
   </div>
+  <div class="mode-connect-notice" id="modeConnectNotice">⚡ Connect your Arduino above before starting</div>
+</div>
 
-  <button id="startBtn" disabled onclick="startGame()">START GAME</button>
-  <div class="connect-notice" id="connectNotice">
-    ⚡ Connect your Arduino above to enable the Start button
+<!-- ══ TIMED SETUP ══ -->
+<div class="view" id="setupView">
+  <div class="setup-inner">
+    <div class="setup-title timed">⏱️ TIMED COMPETITION</div>
+    <div class="setup-card">
+      <div>
+        <div class="field-label">Throw Time Per Turn</div>
+        <div class="stepper">
+          <button class="step-btn" onclick="adjust('throwTime',-1)">−</button>
+          <div><span class="stepper-val" id="throwTimeVal">10</span><span class="stepper-unit"> seconds</span></div>
+          <button class="step-btn" onclick="adjust('throwTime',1)">+</button>
+        </div>
+      </div>
+      <div>
+        <div class="field-label">Total Game Duration</div>
+        <div class="stepper">
+          <button class="step-btn" onclick="adjust('gameDuration',-1)">−</button>
+          <div><span class="stepper-val" id="gameDurationVal">20</span><span class="stepper-unit"> minutes</span></div>
+          <button class="step-btn" onclick="adjust('gameDuration',1)">+</button>
+        </div>
+      </div>
+    </div>
+    <button class="action-btn green" id="startBtn" disabled onclick="startTimedGame()">START GAME</button>
+    <button class="action-btn back" onclick="showView('modeView')">← BACK TO MENU</button>
+    <div class="connect-notice" id="connectNotice">⚡ Connect your Arduino above to enable Start</div>
   </div>
 </div>
 
-<!-- GAME VIEW -->
+<!-- ══ COLOR SETUP ══ -->
+<div class="view" id="colorSetupView">
+  <div class="setup-inner">
+    <div class="setup-title color">🎨 COLOR COMPETITION</div>
+
+    <div class="setup-card">
+      <div>
+        <div class="field-label">Sequence Time Limit</div>
+        <div class="stepper">
+          <button class="step-btn" onclick="adjustColor('colorThrowTime',-1)">−</button>
+          <div><span class="stepper-val" id="colorThrowTimeVal">15</span><span class="stepper-unit"> seconds</span></div>
+          <button class="step-btn" onclick="adjustColor('colorThrowTime',1)">+</button>
+        </div>
+      </div>
+      <div>
+        <div class="field-label">Total Game Duration</div>
+        <div class="stepper">
+          <button class="step-btn" onclick="adjustColor('colorGameDuration',-1)">−</button>
+          <div><span class="stepper-val" id="colorGameDurationVal">20</span><span class="stepper-unit"> minutes</span></div>
+          <button class="step-btn" onclick="adjustColor('colorGameDuration',1)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="width:100%;max-width:520px;">
+      <div class="field-label" style="margin-bottom:10px;">Difficulty</div>
+      <div class="diff-row">
+        <button class="diff-btn active" id="diffEasy" onclick="setDifficulty('easy')">EASY<span class="diff-sub">1 hoop</span></button>
+        <button class="diff-btn" id="diffMedium" onclick="setDifficulty('medium')">MEDIUM<span class="diff-sub">2 hoops</span></button>
+        <button class="diff-btn" id="diffHard" onclick="setDifficulty('hard')">HARD<span class="diff-sub">3 hoops</span></button>
+      </div>
+    </div>
+
+    <div style="width:100%;max-width:520px;">
+      <div class="field-label" style="margin-bottom:10px;">Hoop Color Key</div>
+      <div class="hoop-legend">
+        <div class="hoop-legend-item"><div class="hoop-dot" style="background:var(--hoop-red)"></div>Hoop 1 — Red</div>
+        <div class="hoop-legend-item"><div class="hoop-dot" style="background:var(--hoop-green)"></div>Hoop 2 — Green</div>
+        <div class="hoop-legend-item"><div class="hoop-dot" style="background:var(--hoop-yellow)"></div>Hoop 3 — Yellow</div>
+        <div class="hoop-legend-item"><div class="hoop-dot" style="background:var(--hoop-blue)"></div>Hoop 4 — Blue</div>
+      </div>
+    </div>
+
+    <button class="action-btn gold" id="colorStartBtn" disabled onclick="startColorGame()">START COLOR GAME</button>
+    <button class="action-btn back" onclick="showView('modeView')">← BACK TO MENU</button>
+    <div class="connect-notice" id="colorConnectNotice">⚡ Connect your Arduino above to enable Start</div>
+  </div>
+</div>
+
+<!-- ══ TIMED GAME VIEW ══ -->
 <div class="view" id="gameView">
-  <div class="scoreboard">
-    <div class="player-card p1 active-turn" id="p1Card">
-      <div class="player-label">Player 1</div>
-      <div class="player-score" id="p1Score">0</div>
-      <div class="turn-badge">YOUR TURN — THROW!</div>
+  <div style="padding:20px 24px;display:flex;flex-direction:column;gap:16px;flex:1;">
+    <div class="scoreboard">
+      <div class="player-card p1 active-turn" id="p1Card">
+        <div class="player-label">Player 1</div>
+        <div class="player-score" id="p1Score">0</div>
+        <div class="turn-badge">YOUR TURN — THROW!</div>
+      </div>
+      <div class="player-card p2" id="p2Card">
+        <div class="player-label">Player 2</div>
+        <div class="player-score" id="p2Score">0</div>
+        <div class="turn-badge">YOUR TURN — THROW!</div>
+      </div>
     </div>
-    <div class="player-card p2" id="p2Card">
-      <div class="player-label">Player 2</div>
-      <div class="player-score" id="p2Score">0</div>
-      <div class="turn-badge">YOUR TURN — THROW!</div>
-    </div>
-  </div>
-
-  <div class="info-bar">
-    <div class="info-block">
-      <div class="info-block-label">Current Turn</div>
-      <div class="info-block-val" id="currentTurnVal">Player 1</div>
-    </div>
-    <div class="info-block">
-      <div class="info-block-label">Throw Timer</div>
-      <div class="info-block-val" id="throwTimerVal">10s</div>
-    </div>
-    <div class="info-block">
-      <div class="info-block-label">Game Time Left</div>
-      <div class="info-block-val" id="gameTimerVal">20:00</div>
+    <div class="info-bar">
+      <div class="info-block"><div class="info-block-label">Current Turn</div><div class="info-block-val" id="currentTurnVal">Player 1</div></div>
+      <div class="info-block"><div class="info-block-label">Throw Timer</div><div class="info-block-val" id="throwTimerVal">10s</div></div>
+      <div class="info-block"><div class="info-block-label">Game Time Left</div><div class="info-block-val" id="gameTimerVal">20:00</div></div>
     </div>
   </div>
 </div>
 
-<!-- WINNER VIEW -->
-<div class="view" id="winnerView">
-  <div class="winner-label">Game Over — Winner</div>
-  <div class="winner-name" id="winnerName">Player 1</div>
-  <div class="final-scores">
-    <div class="final-score-block p1">
-      <div class="name">Player 1</div>
-      <div class="score" id="finalP1">0</div>
+<!-- ══ COLOR GAME VIEW ══ -->
+<div class="view" id="colorGameView">
+  <div style="padding:14px 20px;display:flex;flex-direction:column;gap:12px;flex:1;">
+    <div class="color-scoreboard">
+      <div class="color-player-card p1 active-turn" id="cp1Card">
+        <div class="color-player-label">Player 1</div>
+        <div class="color-player-score" id="cp1Score">0</div>
+        <div class="color-turn-badge">YOUR TURN!</div>
+      </div>
+      <div class="color-player-card p2" id="cp2Card">
+        <div class="color-player-label">Player 2</div>
+        <div class="color-player-score" id="cp2Score">0</div>
+        <div class="color-turn-badge">YOUR TURN!</div>
+      </div>
     </div>
-    <div class="vs-divider">VS</div>
-    <div class="final-score-block p2">
-      <div class="name">Player 2</div>
-      <div class="score" id="finalP2">0</div>
+
+    <div class="sequence-panel">
+      <div class="sequence-label">THROW THE HOOPS IN THIS ORDER</div>
+      <div class="sequence-hoops" id="seqHoops"></div>
+      <div class="seq-progress" id="seqProgress"></div>
+    </div>
+
+    <div class="color-info-bar">
+      <div class="info-block"><div class="info-block-label">Difficulty</div><div class="info-block-val" id="difficultyVal">EASY</div></div>
+      <div class="info-block"><div class="info-block-label">Time Left</div><div class="info-block-val" id="colorThrowTimerVal">15s</div></div>
+      <div class="info-block"><div class="info-block-label">Game Time</div><div class="info-block-val" id="colorGameTimerVal">20:00</div></div>
     </div>
   </div>
-  <button id="playAgainBtn" onclick="resetToSetup()">PLAY AGAIN</button>
+</div>
+
+<!-- ══ WINNER VIEW ══ -->
+<div class="view" id="winnerView">
+  <div class="winner-label">Game Over</div>
+  <div class="winner-mode-badge" id="winnerModeBadge">TIMED COMPETITION</div>
+  <div class="winner-name" id="winnerName">Player 1 Wins!</div>
+  <div class="final-scores">
+    <div class="final-score-block p1"><div class="name">Player 1</div><div class="score" id="finalP1">0</div></div>
+    <div class="vs-divider">VS</div>
+    <div class="final-score-block p2"><div class="name">Player 2</div><div class="score" id="finalP2">0</div></div>
+  </div>
+  <button class="action-btn green" style="max-width:300px;" onclick="resetToMode()">PLAY AGAIN</button>
 </div>
 
 <!-- TOAST -->
 <div id="toast">
   <div id="toastTitle">SCORED!</div>
-  <div id="toastSub">Player 1 gets the point</div>
+  <div id="toastSub"></div>
 </div>
 
 <script>
-// ─── WEB SERIAL ───────────────────────────────────────────────────────────────
-let port = null;
-let writer = null;
-let connected = false;
+// ══════════════════════════════════════════════════════
+// WEB SERIAL
+// ══════════════════════════════════════════════════════
+let port = null, writer = null, connected = false;
 
-// Check browser support
 if (!('serial' in navigator)) {
   document.getElementById('noSerialBanner').style.display = 'block';
 }
 
 async function connectArduino() {
   try {
-    console.log('[Serial] Requesting port...');
     port = await navigator.serial.requestPort();
-
-    console.log('[Serial] Opening port at 9600 baud...');
     await port.open({ baudRate: 9600 });
-    console.log('[Serial] Port opened successfully');
 
-    const statusDot  = document.getElementById('statusDot');
-    const statusText = document.getElementById('statusText');
-    statusDot.className  = 'status-dot connected';
-    statusText.textContent = 'Connected';
+    document.getElementById('statusDot').className = 'status-dot connected';
+    document.getElementById('statusText').textContent = 'Connected';
     document.getElementById('connectBtn').textContent = 'Connected ✓';
     document.getElementById('connectBtn').disabled = true;
     document.getElementById('startBtn').disabled = false;
+    document.getElementById('colorStartBtn').disabled = false;
     document.getElementById('connectNotice').style.display = 'none';
+    document.getElementById('colorConnectNotice').style.display = 'none';
+    document.getElementById('modeConnectNotice').style.display = 'none';
     connected = true;
 
-    // Setup writer using raw writable stream
     const writeEncoder = new TextEncoder();
-    const writableStream = port.writable;
-    const writeStreamWriter = writableStream.getWriter();
-    writer = {
-      write: async (msg) => {
-        const data = writeEncoder.encode(msg);
-        await writeStreamWriter.write(data);
-      }
-    };
-    console.log('[Serial] Writer ready');
+    const wsWriter = port.writable.getWriter();
+    writer = { write: async (m) => await wsWriter.write(writeEncoder.encode(m)) };
 
-    // Setup reader using manual chunked reading (more compatible)
     readLoop(port);
-
   } catch (err) {
-    console.error('[Serial] Connection failed:', err);
+    console.error('[Serial] Failed:', err);
     document.getElementById('statusText').textContent = 'Connection failed — ' + err.message;
     document.getElementById('statusDot').className = 'status-dot error';
   }
 }
 
-// Separate robust read loop with buffer handling
 async function readLoop(port) {
   const decoder = new TextDecoder();
   let buffer = '';
-  console.log('[Serial] Read loop started');
-
   while (port.readable) {
     const reader = port.readable.getReader();
     try {
       while (true) {
         const { value, done } = await reader.read();
-        if (done) {
-          console.log('[Serial] Reader done');
-          reader.releaseLock();
-          break;
-        }
+        if (done) { reader.releaseLock(); break; }
         if (value) {
-          // Decode raw bytes into string
-          const chunk = decoder.decode(value, { stream: true });
-          console.log('[Serial] Raw chunk received:', JSON.stringify(chunk));
-          buffer += chunk;
-
-          // Split on newlines and process complete lines
+          buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n');
-          // Keep the last incomplete line in the buffer
           buffer = lines.pop();
-
-          lines.forEach(line => {
-            line = line.trim();
-            if (line.length > 0) {
-              console.log('[Serial] Complete message:', line);
-              handleArduinoMessage(line);
-            }
-          });
+          lines.forEach(line => { line = line.trim(); if (line) handleArduinoMessage(line); });
         }
       }
-    } catch (err) {
-      console.error('[Serial] Read error:', err);
-      reader.releaseLock();
-    }
+    } catch (err) { console.error('[Serial] Read error:', err); reader.releaseLock(); }
   }
-  console.log('[Serial] Port no longer readable — connection lost');
   document.getElementById('statusDot').className = 'status-dot error';
   document.getElementById('statusText').textContent = 'Disconnected';
 }
 
 async function sendToArduino(msg) {
-  if (writer) {
-    try {
-      await writer.write(msg + '\n');
-      console.log('[Serial] Sent to Arduino:', msg);
-    } catch(e) {
-      console.error('[Serial] Send failed:', e);
-    }
-  }
+  if (writer) { try { await writer.write(msg + '\n'); } catch(e) {} }
 }
 
 document.getElementById('connectBtn').addEventListener('click', connectArduino);
 
-// ─── GAME STATE ───────────────────────────────────────────────────────────────
-let throwTimeSec    = 10;
-let gameDurationMin = 20;
-let scoreP1         = 0;
-let scoreP2         = 0;
-let currentPlayer   = 1;
-let gameActive      = false;
+// ══════════════════════════════════════════════════════
+// SHARED
+// ══════════════════════════════════════════════════════
+let toastTimeout = null;
 
-let gameEndMs       = 0;
-let turnEndMs       = 0;
-let gameInterval    = null;
-let toastTimeout    = null;
-let awaitingNextTurn = false;
-
-// ─── SETUP CONTROLS ───────────────────────────────────────────────────────────
-const LIMITS = {
-  throwTime:    { min: 3,  max: 60,  step: 1  },
-  gameDuration: { min: 1,  max: 60,  step: 1  },
-};
-
-function adjust(field, dir) {
-  const L = LIMITS[field];
-  if (field === 'throwTime') {
-    throwTimeSec = Math.min(L.max, Math.max(L.min, throwTimeSec + dir));
-    document.getElementById('throwTimeVal').textContent = throwTimeSec;
-  } else {
-    gameDurationMin = Math.min(L.max, Math.max(L.min, gameDurationMin + dir));
-    document.getElementById('gameDurationVal').textContent = gameDurationMin;
-  }
-  sendToArduino('BEEP:CLICK');
-}
-
-// ─── VIEW SWITCHING ───────────────────────────────────────────────────────────
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
 
-// ─── START GAME ───────────────────────────────────────────────────────────────
-function startGame() {
-  scoreP1 = 0;
-  scoreP2 = 0;
-  currentPlayer = 1;
-  gameActive = true;
-  awaitingNextTurn = false;
+function showToast(title, sub, type) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastSub').textContent   = sub;
+  t.className = 'show ' + type;
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => { t.className = ''; }, 1900);
+}
 
-  gameEndMs  = Date.now() + gameDurationMin * 60 * 1000;
-  turnEndMs  = Date.now() + throwTimeSec * 1000;
+function pad(n) { return String(n).padStart(2,'0'); }
+function fmtTime(ms) { return pad(Math.floor(ms/60000)) + ':' + pad(Math.floor((ms%60000)/1000)); }
 
-  updateScoreboard();
+function selectMode(mode) {
+  sendToArduino('BEEP:CLICK');
+  showView(mode === 'timed' ? 'setupView' : 'colorSetupView');
+}
+
+function resetToMode() {
+  clearInterval(gameInterval);
+  clearInterval(colorGameInterval);
+  gameActive = false;
+  colorGameActive = false;
+  showView('modeView');
+}
+
+// ══════════════════════════════════════════════════════
+// TIMED COMPETITION
+// ══════════════════════════════════════════════════════
+let throwTimeSec = 10, gameDurationMin = 20;
+let scoreP1 = 0, scoreP2 = 0, currentPlayer = 1;
+let gameActive = false, gameEndMs = 0, turnEndMs = 0;
+let gameInterval = null, awaitingNextTurn = false;
+
+function adjust(field, dir) {
+  if (field === 'throwTime') { throwTimeSec = Math.min(60, Math.max(3, throwTimeSec + dir)); document.getElementById('throwTimeVal').textContent = throwTimeSec; }
+  else { gameDurationMin = Math.min(60, Math.max(1, gameDurationMin + dir)); document.getElementById('gameDurationVal').textContent = gameDurationMin; }
+  sendToArduino('BEEP:CLICK');
+}
+
+function startTimedGame() {
+  scoreP1 = 0; scoreP2 = 0; currentPlayer = 1;
+  gameActive = true; awaitingNextTurn = false;
+  gameEndMs = Date.now() + gameDurationMin * 60000;
+  turnEndMs = Date.now() + throwTimeSec * 1000;
+  updateTimedBoard();
   showView('gameView');
   sendToArduino('BEEP:CLICK');
-
-  gameInterval = setInterval(gameTick, 200);
+  gameInterval = setInterval(timedTick, 200);
 }
 
-// ─── GAME TICK ────────────────────────────────────────────────────────────────
-function gameTick() {
+function timedTick() {
   if (!gameActive) return;
-
-  const now        = Date.now();
-  const gameLeft   = Math.max(0, gameEndMs - now);
-  const turnLeft   = Math.max(0, turnEndMs - now);
-  const turnSec    = Math.ceil(turnLeft / 1000);
-  const gameMin    = Math.floor(gameLeft / 60000);
-  const gameSec    = Math.floor((gameLeft % 60000) / 1000);
-
-  // Update timers
-  const throwEl = document.getElementById('throwTimerVal');
-  throwEl.textContent = turnSec + 's';
-  throwEl.className = 'info-block-val' + (turnSec <= 3 ? ' urgent' : '');
-
-  const pad = n => String(n).padStart(2,'0');
-  document.getElementById('gameTimerVal').textContent = pad(gameMin) + ':' + pad(gameSec);
-
-  // Game over
-  if (gameLeft <= 0) {
-    endGame();
-    return;
-  }
-
-  // Turn expired — missed throw
-  if (turnLeft <= 0 && !awaitingNextTurn) {
+  const now = Date.now();
+  const gLeft = Math.max(0, gameEndMs - now);
+  const tLeft = Math.max(0, turnEndMs - now);
+  const tSec  = Math.ceil(tLeft / 1000);
+  const el = document.getElementById('throwTimerVal');
+  el.textContent = tSec + 's';
+  el.className = 'info-block-val' + (tSec <= 3 ? ' urgent' : '');
+  document.getElementById('gameTimerVal').textContent = fmtTime(gLeft);
+  if (gLeft <= 0) { endGame('timed'); return; }
+  if (tLeft <= 0 && !awaitingNextTurn) {
     awaitingNextTurn = true;
-    const loser  = currentPlayer;
-    const winner = currentPlayer === 1 ? 2 : 1;
+    const loser = currentPlayer, winner = currentPlayer === 1 ? 2 : 1;
     if (winner === 1) scoreP1++; else scoreP2++;
     sendToArduino('BEEP:FAIL');
-    showToast('MISSED!', `Player ${loser} missed — Player ${winner} gets the point`, 'miss');
-    setTimeout(() => switchTurn(), 1800);
+    showToast('MISSED!', `Player ${loser} missed — Player ${winner} scores!`, 'miss');
+    setTimeout(timedSwitch, 1900);
   }
 }
 
-// ─── HANDLE ARDUINO MESSAGE ───────────────────────────────────────────────────
-function handleArduinoMessage(msg) {
-  console.log('[Game] handleArduinoMessage called with:', msg, '| gameActive:', gameActive, '| awaitingNextTurn:', awaitingNextTurn);
+function timedSwitch() {
+  currentPlayer = currentPlayer === 1 ? 2 : 1;
+  turnEndMs = Date.now() + throwTimeSec * 1000;
+  awaitingNextTurn = false;
+  updateTimedBoard();
+}
 
-  if (!gameActive || awaitingNextTurn) {
-    console.log('[Game] Ignoring message — game not active or awaiting turn switch');
-    return;
+function updateTimedBoard() {
+  document.getElementById('p1Score').textContent = scoreP1;
+  document.getElementById('p2Score').textContent = scoreP2;
+  document.getElementById('currentTurnVal').textContent = `Player ${currentPlayer}`;
+  document.getElementById('p1Card').classList.toggle('active-turn', currentPlayer === 1);
+  document.getElementById('p2Card').classList.toggle('active-turn', currentPlayer === 2);
+}
+
+// ══════════════════════════════════════════════════════
+// COLOR COMPETITION
+// ══════════════════════════════════════════════════════
+const HOOP_COLORS = {
+  1: { name: 'RED',    hex: '#ef4444', bg: '#3a0a0a' },
+  2: { name: 'GREEN',  hex: '#22c55e', bg: '#0a2a0a' },
+  3: { name: 'YELLOW', hex: '#f59e0b', bg: '#2a1f00' },
+  4: { name: 'BLUE',   hex: '#3b82f6', bg: '#0a1a3a' },
+};
+
+let colorThrowTimeSec = 15, colorGameDurationMin = 20;
+let difficulty = 'easy', seqLength = 1;
+let colorScoreP1 = 0, colorScoreP2 = 0, colorCurrentPlayer = 1;
+let colorGameActive = false, colorGameEndMs = 0, colorTurnEndMs = 0;
+let colorGameInterval = null, colorAwaitingNext = false;
+let currentSequence = [], sequenceProgress = 0;
+
+function adjustColor(field, dir) {
+  if (field === 'colorThrowTime') { colorThrowTimeSec = Math.min(60, Math.max(3, colorThrowTimeSec + dir)); document.getElementById('colorThrowTimeVal').textContent = colorThrowTimeSec; }
+  else { colorGameDurationMin = Math.min(60, Math.max(1, colorGameDurationMin + dir)); document.getElementById('colorGameDurationVal').textContent = colorGameDurationMin; }
+  sendToArduino('BEEP:CLICK');
+}
+
+function setDifficulty(diff) {
+  difficulty = diff;
+  seqLength  = diff === 'easy' ? 1 : diff === 'medium' ? 2 : 3;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff' + diff.charAt(0).toUpperCase() + diff.slice(1)).classList.add('active');
+  sendToArduino('BEEP:CLICK');
+}
+
+function generateSequence() {
+  const seq = [];
+  for (let i = 0; i < seqLength; i++) {
+    let h; do { h = Math.floor(Math.random() * 4) + 1; } while (seq.length > 0 && h === seq[seq.length-1]);
+    seq.push(h);
   }
+  return seq;
+}
 
-  if (msg.startsWith('HOOP:')) {
-    const hoop = parseInt(msg.split(':')[1]);
-    console.log('[Game] HOOP detected! Hoop number:', hoop, 'Current player:', currentPlayer);
+function renderSequence() {
+  const hoopsEl = document.getElementById('seqHoops');
+  const progEl  = document.getElementById('seqProgress');
+  hoopsEl.innerHTML = '';
+  progEl.innerHTML  = '';
+
+  currentSequence.forEach((hoopNum, idx) => {
+    const c = HOOP_COLORS[hoopNum];
+    const isActive = idx === sequenceProgress;
+    const isDone   = idx < sequenceProgress;
+
+    const div = document.createElement('div');
+    div.className = 'seq-hoop' + (isActive ? ' active-seq' : '') + (isDone ? ' completed-seq' : '');
+    div.id = 'seqHoop_' + idx;
+
+    if (isDone) {
+      div.innerHTML = `<div class="seq-circle" style="background:#0a2a0a;border-color:#22c55e;"><span style="color:#22c55e;font-size:1.5rem;">✓</span></div><div class="seq-hoop-num" style="color:#22c55e;">DONE</div>`;
+    } else {
+      div.innerHTML = `<div class="seq-circle" style="background:${c.bg};border-color:${c.hex};color:${c.hex};">${c.name}</div><div class="seq-hoop-num">HOOP ${hoopNum}</div>`;
+    }
+    hoopsEl.appendChild(div);
+
+    const dot = document.createElement('div');
+    dot.className = 'seq-dot' + (isDone ? ' done' : isActive ? ' current' : '');
+    progEl.appendChild(dot);
+  });
+}
+
+function startColorGame() {
+  colorScoreP1 = 0; colorScoreP2 = 0; colorCurrentPlayer = 1;
+  colorGameActive = true; colorAwaitingNext = false;
+  colorGameEndMs = Date.now() + colorGameDurationMin * 60000;
+  document.getElementById('difficultyVal').textContent = difficulty.toUpperCase();
+  newColorTurn();
+  updateColorBoard();
+  showView('colorGameView');
+  sendToArduino('BEEP:CLICK');
+  colorGameInterval = setInterval(colorTick, 200);
+}
+
+function newColorTurn() {
+  currentSequence  = generateSequence();
+  sequenceProgress = 0;
+  colorTurnEndMs   = Date.now() + colorThrowTimeSec * 1000;
+  renderSequence();
+}
+
+function colorTick() {
+  if (!colorGameActive) return;
+  const now = Date.now();
+  const gLeft = Math.max(0, colorGameEndMs - now);
+  const tLeft = Math.max(0, colorTurnEndMs - now);
+  const tSec  = Math.ceil(tLeft / 1000);
+  const el = document.getElementById('colorThrowTimerVal');
+  el.textContent = tSec + 's';
+  el.className = 'info-block-val' + (tSec <= 3 ? ' urgent' : '');
+  document.getElementById('colorGameTimerVal').textContent = fmtTime(gLeft);
+  if (gLeft <= 0) { endGame('color'); return; }
+  if (tLeft <= 0 && !colorAwaitingNext) {
+    colorAwaitingNext = true;
+    const loser = colorCurrentPlayer, winner = colorCurrentPlayer === 1 ? 2 : 1;
+    if (winner === 1) colorScoreP1++; else colorScoreP2++;
+    sendToArduino('BEEP:FAIL');
+    showToast('TIME UP! ⏰', `Player ${loser} ran out of time — Player ${winner} scores!`, 'miss');
+    setTimeout(colorSwitch, 1900);
+  }
+}
+
+function colorSwitch() {
+  colorCurrentPlayer = colorCurrentPlayer === 1 ? 2 : 1;
+  colorAwaitingNext  = false;
+  newColorTurn();
+  updateColorBoard();
+}
+
+function updateColorBoard() {
+  document.getElementById('cp1Score').textContent = colorScoreP1;
+  document.getElementById('cp2Score').textContent = colorScoreP2;
+  document.getElementById('cp1Card').classList.toggle('active-turn', colorCurrentPlayer === 1);
+  document.getElementById('cp2Card').classList.toggle('active-turn', colorCurrentPlayer === 2);
+}
+
+// ══════════════════════════════════════════════════════
+// ARDUINO MESSAGE ROUTER
+// ══════════════════════════════════════════════════════
+function handleArduinoMessage(msg) {
+  if (!msg.startsWith('HOOP:')) return;
+  const hoop = parseInt(msg.split(':')[1]);
+
+  // Timed mode
+  if (gameActive && !awaitingNextTurn) {
     if (currentPlayer === 1) scoreP1++; else scoreP2++;
     sendToArduino('BEEP:SUCCESS');
     showToast(`HOOP ${hoop}! 🏀`, `Player ${currentPlayer} scores!`, 'score');
     awaitingNextTurn = true;
-    updateScoreboard();
-    setTimeout(() => switchTurn(), 1800);
+    updateTimedBoard();
+    setTimeout(timedSwitch, 1900);
+    return;
+  }
+
+  // Color mode
+  if (colorGameActive && !colorAwaitingNext) {
+    const expected = currentSequence[sequenceProgress];
+
+    if (hoop === expected) {
+      // Correct!
+      const el = document.getElementById('seqHoop_' + sequenceProgress);
+      if (el) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 350); }
+      sequenceProgress++;
+      renderSequence();
+
+      if (sequenceProgress >= currentSequence.length) {
+        // Full sequence done — score!
+        if (colorCurrentPlayer === 1) colorScoreP1++; else colorScoreP2++;
+        sendToArduino('BEEP:SUCCESS');
+        showToast('SEQUENCE DONE! 🎉', `Player ${colorCurrentPlayer} scores!`, 'score');
+        colorAwaitingNext = true;
+        updateColorBoard();
+        setTimeout(colorSwitch, 1900);
+      } else {
+        sendToArduino('BEEP:CLICK');
+      }
+    } else {
+      // Wrong hoop
+      const rightColor = HOOP_COLORS[expected];
+      const loser = colorCurrentPlayer, winner = colorCurrentPlayer === 1 ? 2 : 1;
+      if (winner === 1) colorScoreP1++; else colorScoreP2++;
+      sendToArduino('BEEP:FAIL');
+      showToast('WRONG HOOP! ❌', `Expected ${rightColor.name} — Player ${winner} scores!`, 'wrong');
+      colorAwaitingNext = true;
+      updateColorBoard();
+      setTimeout(colorSwitch, 1900);
+    }
   }
 }
 
-// ─── SWITCH TURN ─────────────────────────────────────────────────────────────
-function switchTurn() {
-  currentPlayer = currentPlayer === 1 ? 2 : 1;
-  turnEndMs = Date.now() + throwTimeSec * 1000;
-  awaitingNextTurn = false;
-  updateScoreboard();
-}
-
-// ─── UPDATE SCOREBOARD UI ────────────────────────────────────────────────────
-function updateScoreboard() {
-  document.getElementById('p1Score').textContent = scoreP1;
-  document.getElementById('p2Score').textContent = scoreP2;
-  document.getElementById('currentTurnVal').textContent = `Player ${currentPlayer}`;
-
-  const p1Card = document.getElementById('p1Card');
-  const p2Card = document.getElementById('p2Card');
-  p1Card.classList.toggle('active-turn', currentPlayer === 1);
-  p2Card.classList.toggle('active-turn', currentPlayer === 2);
-}
-
-// ─── SCORE BUMP ANIMATION ─────────────────────────────────────────────────────
-function bumpScore(player) {
-  const el = document.getElementById(`p${player}Score`);
-  el.classList.add('bump');
-  setTimeout(() => el.classList.remove('bump'), 200);
-}
-
-// ─── TOAST ────────────────────────────────────────────────────────────────────
-function showToast(title, sub, type) {
-  const toast = document.getElementById('toast');
-  document.getElementById('toastTitle').textContent = title;
-  document.getElementById('toastSub').textContent   = sub;
-  toast.className = 'show ' + type;
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => { toast.className = ''; }, 1600);
-}
-
-// ─── END GAME ─────────────────────────────────────────────────────────────────
-function endGame() {
-  gameActive = false;
+// ══════════════════════════════════════════════════════
+// END GAME
+// ══════════════════════════════════════════════════════
+function endGame(mode) {
   clearInterval(gameInterval);
+  clearInterval(colorGameInterval);
+  gameActive = false; colorGameActive = false;
   sendToArduino('BEEP:WIN');
 
-  document.getElementById('finalP1').textContent = scoreP1;
-  document.getElementById('finalP2').textContent = scoreP2;
+  const s1 = mode === 'timed' ? scoreP1 : colorScoreP1;
+  const s2 = mode === 'timed' ? scoreP2 : colorScoreP2;
 
-  const winnerEl = document.getElementById('winnerName');
-  if (scoreP1 > scoreP2) {
-    winnerEl.textContent = 'Player 1 Wins!';
-    winnerEl.className = 'winner-name p1';
-  } else if (scoreP2 > scoreP1) {
-    winnerEl.textContent = 'Player 2 Wins!';
-    winnerEl.className = 'winner-name p2';
-  } else {
-    winnerEl.textContent = "It's a Tie!";
-    winnerEl.className = 'winner-name tie';
-  }
+  document.getElementById('finalP1').textContent = s1;
+  document.getElementById('finalP2').textContent = s2;
+  document.getElementById('winnerModeBadge').textContent =
+    mode === 'timed' ? 'TIMED COMPETITION' : 'COLOR COMPETITION — ' + difficulty.toUpperCase();
+
+  const el = document.getElementById('winnerName');
+  if (s1 > s2)      { el.textContent = 'Player 1 Wins!'; el.className = 'winner-name p1'; }
+  else if (s2 > s1) { el.textContent = 'Player 2 Wins!'; el.className = 'winner-name p2'; }
+  else              { el.textContent = "It's a Tie!";     el.className = 'winner-name tie'; }
 
   showView('winnerView');
-}
-
-// ─── RESET ────────────────────────────────────────────────────────────────────
-function resetToSetup() {
-  showView('setupView');
-  document.getElementById('throwTimeVal').textContent = throwTimeSec;
-  document.getElementById('gameDurationVal').textContent = gameDurationMin;
 }
 </script>
 </body>
