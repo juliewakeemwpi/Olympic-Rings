@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Hoop Game Scoreboard</title>
+<title>Olympic Rings Scoreboard</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap');
 
@@ -133,16 +133,16 @@
   .active-turn .color-turn-badge { display: block; }
 
   /* Sequence panel */
-  .sequence-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 22px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
-  .sequence-label { font-size: 0.7rem; color: var(--dim); letter-spacing: 3px; text-transform: uppercase; }
-  .sequence-hoops { display: flex; gap: 20px; align-items: center; justify-content: center; flex-wrap: wrap; }
-  .seq-hoop { display: flex; flex-direction: column; align-items: center; gap: 6px; opacity: 0.3; transition: opacity 0.3s, transform 0.3s; }
-  .seq-hoop.active-seq { opacity: 1; transform: scale(1.1); }
+  .sequence-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px 22px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+  .sequence-label { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: var(--dim); letter-spacing: 4px; text-transform: uppercase; }
+  .sequence-hoops { display: flex; gap: 28px; align-items: center; justify-content: center; flex-wrap: wrap; }
+  .seq-hoop { display: flex; flex-direction: column; align-items: center; gap: 10px; opacity: 0.3; transition: opacity 0.3s, transform 0.3s; }
+  .seq-hoop.active-seq { opacity: 1; transform: scale(1.12); }
   .seq-hoop.completed-seq { opacity: 0.5; }
-  .seq-circle { width: 68px; height: 68px; border-radius: 50%; border: 3px solid transparent; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem; letter-spacing: 1px; }
-  .seq-hoop-num { font-size: 0.62rem; color: var(--dim); letter-spacing: 1px; }
-  .seq-progress { display: flex; gap: 8px; }
-  .seq-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: background 0.2s; }
+  .seq-circle { width: 120px; height: 120px; border-radius: 50%; border: 4px solid transparent; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 2px; }
+  .seq-hoop-num { font-size: 0.8rem; color: var(--dim); letter-spacing: 2px; font-weight: 600; }
+  .seq-progress { display: flex; gap: 10px; }
+  .seq-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--border); transition: background 0.2s; }
   .seq-dot.done { background: var(--green); }
   .seq-dot.current { background: var(--yellow); }
 
@@ -188,7 +188,7 @@
 <body>
 
 <header>
-  <div class="logo">🏀 HOOP GAME</div>
+  <div class="logo">🏅 OLYMPIC RINGS</div>
   <div style="display:flex;align-items:center;gap:10px;">
     <span class="status-dot" id="statusDot"></span>
     <span id="statusText">Not connected</span>
@@ -200,7 +200,7 @@
 
 <!-- ══ MODE SELECT ══ -->
 <div class="view active" id="modeView">
-  <div class="mode-title">HOOP GAME</div>
+  <div class="mode-title">OLYMPIC RINGS</div>
   <p class="mode-subtitle">Select a game mode to continue</p>
   <div class="mode-cards">
     <div class="mode-card timed" onclick="selectMode('timed')">
@@ -584,7 +584,7 @@ function renderSequence() {
     div.id = 'seqHoop_' + idx;
 
     if (isDone) {
-      div.innerHTML = `<div class="seq-circle" style="background:#0a2a0a;border-color:#22c55e;"><span style="color:#22c55e;font-size:1.5rem;">✓</span></div><div class="seq-hoop-num" style="color:#22c55e;">DONE</div>`;
+      div.innerHTML = `<div class="seq-circle" style="background:#0a2a0a;border-color:#22c55e;"><span style="color:#22c55e;font-size:2.8rem;">✓</span></div><div class="seq-hoop-num" style="color:#22c55e;">DONE</div>`;
     } else {
       div.innerHTML = `<div class="seq-circle" style="background:${c.bg};border-color:${c.hex};color:${c.hex};">${c.name}</div><div class="seq-hoop-num">HOOP ${hoopNum}</div>`;
     }
@@ -661,7 +661,7 @@ function handleArduinoMessage(msg) {
   if (gameActive && !awaitingNextTurn) {
     if (currentPlayer === 1) scoreP1++; else scoreP2++;
     sendToArduino('BEEP:SUCCESS');
-    showToast(`HOOP ${hoop}! 🏀`, `Player ${currentPlayer} scores!`, 'score');
+    showToast(`RING ${hoop}! 🏅`, `Player ${currentPlayer} scores!`, 'score');
     awaitingNextTurn = true;
     updateTimedBoard();
     setTimeout(timedSwitch, 1900);
