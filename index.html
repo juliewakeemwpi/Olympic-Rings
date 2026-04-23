@@ -246,6 +246,11 @@
     min-height: 0;
   }
 
+  /* Color game gets 2/3 left, 1/3 split between timer and score */
+  .game-stats-row.color-layout {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+
   .stat-block {
     display: flex;
     flex-direction: column;
@@ -623,7 +628,7 @@
   </div>
 
   <!-- THREE COLUMNS -->
-  <div class="game-stats-row">
+  <div class="game-stats-row color-layout">
     <div class="stat-block left-block">
       <div class="stat-label">Throw Rings In This Order</div>
       <div class="seq-full-wrap">
