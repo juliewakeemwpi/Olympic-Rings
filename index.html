@@ -898,7 +898,7 @@ function renderSequence() {
 
   // Hard mode (3 circles): shrink to fit one row; easy/medium keep the larger size
   const isHard = currentSequence.length === 3;
-  const circleSize = isHard ? 'clamp(80px, 11vw, 140px)' : 'clamp(150px, 20vw, 240px)';
+  const circleSize = isHard ? 'clamp(160px, 22vw, 280px)' : 'clamp(150px, 20vw, 240px)';
   const checkSize  = isHard ? '1.6rem' : '2.5rem';
 
   currentSequence.forEach((hoopNum, idx) => {
