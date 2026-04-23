@@ -896,6 +896,11 @@ function renderSequence() {
   hoopsEl.innerHTML = '';
   progEl.innerHTML  = '';
 
+  // Hard mode (3 circles): shrink to fit one row; easy/medium keep the larger size
+  const isHard = currentSequence.length === 3;
+  const circleSize = isHard ? 'clamp(80px, 11vw, 140px)' : 'clamp(150px, 20vw, 240px)';
+  const checkSize  = isHard ? '1.6rem' : '2.5rem';
+
   currentSequence.forEach((hoopNum, idx) => {
     const c = HOOP_COLORS[hoopNum];
     const isActive = idx === sequenceProgress;
@@ -906,9 +911,9 @@ function renderSequence() {
     div.id = 'seqHoop_' + idx;
 
     if (isDone) {
-      div.innerHTML = `<div class="seq-full-circle" style="background:#16a34a;border-color:#15803d;"><span style="color:#fff;font-size:2.5rem;font-weight:900;">✓</span></div><div class="seq-full-num">DONE</div>`;
+      div.innerHTML = `<div class="seq-full-circle" style="width:${circleSize};height:${circleSize};background:#16a34a;border-color:#15803d;"><span style="color:#fff;font-size:${checkSize};font-weight:900;">✓</span></div><div class="seq-full-num">DONE</div>`;
     } else {
-      div.innerHTML = `<div class="seq-full-circle" style="background:${c.hex};border-color:${c.textHex};"></div><div class="seq-full-num">RING ${hoopNum}</div>`;
+      div.innerHTML = `<div class="seq-full-circle" style="width:${circleSize};height:${circleSize};background:${c.hex};border-color:${c.textHex};"></div><div class="seq-full-num">RING ${hoopNum}</div>`;
     }
     hoopsEl.appendChild(div);
 
