@@ -358,7 +358,7 @@
   }
   .seq-full-hoops {
     display: flex;
-    gap: 12px;
+    gap: clamp(16px, 3vw, 40px);
     align-items: center;
     justify-content: center;
     flex-wrap: wrap;
@@ -374,17 +374,14 @@
   .seq-full-item.active-seq { opacity: 1; transform: scale(1.12); }
   .seq-full-item.completed-seq { opacity: 0.4; }
   .seq-full-circle {
-    width: clamp(72px, 12vw, 130px);
-    height: clamp(72px, 12vw, 130px);
+    width: clamp(110px, 16vw, 200px);
+    height: clamp(110px, 16vw, 200px);
     border-radius: 50%;
     border: 5px solid transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(0.8rem, 1.6vw, 1.2rem);
-    letter-spacing: 1px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
   }
   .seq-full-num {
     font-size: 0.68rem;
@@ -909,9 +906,9 @@ function renderSequence() {
     div.id = 'seqHoop_' + idx;
 
     if (isDone) {
-      div.innerHTML = `<div class="seq-full-circle" style="background:#dcfce7;border-color:#16a34a;"><span style="color:#16a34a;font-size:2rem;">✓</span></div><div class="seq-full-num" style="color:#16a34a;">DONE</div>`;
+      div.innerHTML = `<div class="seq-full-circle" style="background:#16a34a;border-color:#15803d;"><span style="color:#fff;font-size:2.5rem;font-weight:900;">✓</span></div><div class="seq-full-num">DONE</div>`;
     } else {
-      div.innerHTML = `<div class="seq-full-circle" style="background:${c.bg};border-color:${c.hex};color:${c.textHex};">${c.name}</div><div class="seq-full-num">RING ${hoopNum}</div>`;
+      div.innerHTML = `<div class="seq-full-circle" style="background:${c.hex};border-color:${c.textHex};"></div><div class="seq-full-num">RING ${hoopNum}</div>`;
     }
     hoopsEl.appendChild(div);
 
