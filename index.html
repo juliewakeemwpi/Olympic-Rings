@@ -421,25 +421,25 @@
   /* ══ WINNER VIEW ══ */
   #winnerView {
     align-items: center; justify-content: center;
-    gap: 24px; padding: 48px 24px; text-align: center;
+    gap: 32px; padding: 32px 24px; text-align: center;
   }
-  .winner-label { font-size: 0.9rem; letter-spacing: 4px; text-transform: uppercase; color: var(--dim); font-weight: 700; }
+  .winner-label { font-size: 1.1rem; letter-spacing: 5px; text-transform: uppercase; color: var(--dim); font-weight: 700; }
   .winner-mode-badge {
-    font-size: 0.75rem; letter-spacing: 2px; color: var(--dim);
+    font-size: 0.85rem; letter-spacing: 2px; color: var(--dim);
     background: var(--surface); border: 2px solid var(--border);
-    padding: 5px 16px; border-radius: 20px; font-weight: 600;
+    padding: 6px 20px; border-radius: 20px; font-weight: 600;
   }
-  .winner-name { font-family: 'Bebas Neue', sans-serif; font-size: 5.5rem; letter-spacing: 6px; line-height: 1; }
+  .winner-name { font-family: 'Bebas Neue', sans-serif; font-size: clamp(5rem, 14vw, 10rem); letter-spacing: 6px; line-height: 1; }
   .winner-name.p1 { color: var(--p1); }
   .winner-name.p2 { color: var(--p2); }
   .winner-name.tie { color: var(--yellow); }
-  .final-scores { display: flex; gap: 36px; align-items: center; }
+  .final-scores { display: flex; gap: 60px; align-items: center; }
   .final-score-block { text-align: center; }
-  .final-score-block .name { font-size: 0.78rem; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; font-weight: 700; }
-  .final-score-block .score { font-family: 'Bebas Neue', sans-serif; font-size: 5rem; line-height: 1; }
+  .final-score-block .name { font-size: 1rem; color: var(--dim); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; font-weight: 700; }
+  .final-score-block .score { font-family: 'Bebas Neue', sans-serif; font-size: clamp(6rem, 18vw, 13rem); line-height: 1; }
   .final-score-block.p1 .score { color: var(--p1); }
   .final-score-block.p2 .score { color: var(--p2); }
-  .vs-divider { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--dim); }
+  .vs-divider { font-family: 'Bebas Neue', sans-serif; font-size: 2.4rem; color: var(--dim); }
 
   /* ══ TOAST ══ */
   #toast {
@@ -787,40 +787,82 @@ function soundTimeUp() {
   playTone(100, 0.45, 'square', 0.5, 0.56);
 }
 
-// 👏 Applause — layered noise bursts simulating clapping
+// 🎉 Crowd cheer — layered noise with roar buildup, sustained cheer, and fade
 function soundApplause() {
   const ctx = getAudioCtx();
-  const totalDuration = 3.5;
-  // Generate ~18 clap bursts at random intervals
-  for (let i = 0; i < 18; i++) {
-    const t = i * 0.19 + (Math.random() * 0.06);
-    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.08, ctx.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let j = 0; j < data.length; j++) {
-      data[j] = (Math.random() * 2 - 1) * Math.exp(-j / (data.length * 0.3));
+  const now = ctx.currentTime;
+
+  // Helper to create a filtered noise burst at a given time
+  function noiseLayer(startTime, duration, filterFreq, filterQ, peakVol, filterType = 'bandpass') {
+    const bufLen = ctx.sampleRate * duration;
+    const buf = ctx.createBuffer(2, bufLen, ctx.sampleRate); // stereo
+    for (let ch = 0; ch < 2; ch++) {
+      const data = buf.getChannelData(ch);
+      for (let i = 0; i < bufLen; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
     }
     const src = ctx.createBufferSource();
     src.buffer = buf;
-    const gain = ctx.createGain();
-    const vol = 0.3 + Math.random() * 0.25;
-    gain.gain.setValueAtTime(vol, ctx.currentTime + t);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.1);
-    // Bandpass to make it sound more like clapping
+
     const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 1200 + Math.random() * 800;
-    filter.Q.value = 0.8;
+    filter.type = filterType;
+    filter.frequency.value = filterFreq;
+    filter.Q.value = filterQ;
+
+    const gain = ctx.createGain();
+    // Envelope: quick attack, sustain, fade out
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(peakVol, startTime + 0.15);
+    gain.gain.setValueAtTime(peakVol, startTime + duration - 0.6);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
     src.connect(filter);
     filter.connect(gain);
     gain.connect(ctx.destination);
-    src.start(ctx.currentTime + t);
-    src.stop(ctx.currentTime + t + 0.12);
+    src.start(startTime);
+    src.stop(startTime + duration);
   }
-  // Fade-out after clapping: a few more sparse claps at the end
-  for (let i = 0; i < 5; i++) {
-    const t = 3.0 + i * 0.22;
-    playTone(900 + Math.random()*400, 0.06, 'sine', 0.08 * (1 - i/5), t);
+
+  // Layer 1: low crowd rumble — builds up quickly
+  noiseLayer(now,        4.5, 280,  1.2,  0.55, 'lowpass');
+  // Layer 2: mid crowd body — the main cheer mass
+  noiseLayer(now + 0.05, 4.2, 900,  0.9,  0.45, 'bandpass');
+  // Layer 3: high overtones — the brightness/excitement
+  noiseLayer(now + 0.1,  3.8, 2400, 1.5,  0.25, 'bandpass');
+  // Layer 4: second wave swell at ~1.5s — crowd re-energizes
+  noiseLayer(now + 1.4,  3.0, 650,  1.0,  0.35, 'bandpass');
+  noiseLayer(now + 1.5,  2.8, 1800, 1.3,  0.2,  'bandpass');
+
+  // Rhythmic clap pulses riding on top of the roar
+  for (let i = 0; i < 10; i++) {
+    const t = now + 0.3 + i * 0.38 + (Math.random() * 0.06 - 0.03);
+    const clapBuf = ctx.createBuffer(1, ctx.sampleRate * 0.07, ctx.sampleRate);
+    const clapData = clapBuf.getChannelData(0);
+    for (let j = 0; j < clapData.length; j++) {
+      clapData[j] = (Math.random() * 2 - 1) * Math.exp(-j / (clapData.length * 0.25));
+    }
+    const clapSrc = ctx.createBufferSource();
+    clapSrc.buffer = clapBuf;
+    const cf = ctx.createBiquadFilter();
+    cf.type = 'bandpass';
+    cf.frequency.value = 1100 + Math.random() * 600;
+    cf.Q.value = 0.7;
+    const cg = ctx.createGain();
+    cg.gain.setValueAtTime(0.28 + Math.random() * 0.18, t);
+    cg.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+    clapSrc.connect(cf);
+    cf.connect(cg);
+    cg.connect(ctx.destination);
+    clapSrc.start(t);
+    clapSrc.stop(t + 0.1);
   }
+
+  // Triumphant horn stabs to signal the win
+  const hornNotes = [523, 659, 784, 1047]; // C5 E5 G5 C6
+  hornNotes.forEach((freq, i) => {
+    playTone(freq, 0.35, 'sawtooth', 0.18, 0.05 + i * 0.22);
+  });
 }
 
 // 🎵 Partial sequence hit click
