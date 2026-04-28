@@ -560,6 +560,7 @@
         <button class="diff-btn active" id="diffEasy" onclick="setDifficulty('easy')">EASY<span class="diff-sub">1 ring</span></button>
         <button class="diff-btn" id="diffMedium" onclick="setDifficulty('medium')">MEDIUM<span class="diff-sub">2 rings</span></button>
         <button class="diff-btn" id="diffHard" onclick="setDifficulty('hard')">HARD<span class="diff-sub">3 rings</span></button>
+        <button class="diff-btn" id="diffFlashing" onclick="setDifficulty('flashing')">FLASH<span class="diff-sub">2 then hide</span></button>
       </div>
     </div>
     <div style="width:100%;max-width:540px;">
@@ -630,6 +631,11 @@
     <div class="stat-block left-block" id="colorLeftBlock" style="padding:0;overflow:hidden;position:relative;">
       <div id="colorFillPanel" style="position:absolute;inset:0;transition:background 0.4s;"></div>
       <div id="colorRingLabel" style="position:absolute;bottom:18px;left:0;right:0;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:clamp(1rem,2vw,1.6rem);letter-spacing:4px;color:rgba(0,0,0,0.35);pointer-events:none;"></div>
+      <!-- Flashing mode checkmarks overlay -->
+      <div id="flashChecks" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;gap:clamp(20px,4vw,60px);flex-direction:row;">
+        <div id="check0" style="font-size:clamp(4rem,12vw,9rem);opacity:0.18;transition:opacity 0.3s,transform 0.3s;transform:scale(0.9);">✓</div>
+        <div id="check1" style="font-size:clamp(4rem,12vw,9rem);opacity:0.18;transition:opacity 0.3s,transform 0.3s;transform:scale(0.9);">✓</div>
+      </div>
     </div>
     <div class="stat-block mid-block">
       <div class="stat-label">Time Remaining</div>
@@ -1079,7 +1085,7 @@ function adjustColor(field, dir) {
 
 function setDifficulty(diff) {
   difficulty = diff;
-  seqLength  = diff === 'easy' ? 1 : diff === 'medium' ? 2 : 3;
+  seqLength  = diff === 'easy' ? 1 : diff === 'medium' ? 2 : diff === 'hard' ? 3 : 2;
   document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('diff' + diff.charAt(0).toUpperCase() + diff.slice(1)).classList.add('active');
   sendToArduino('BEEP:CLICK');
@@ -1094,14 +1100,80 @@ function generateSequence() {
   return seq;
 }
 
+let flashingPhase = 'hidden'; // 'showing' | 'hidden'
+
 function renderSequence() {
-  // Always show just the CURRENT color as a solid fill on the left panel
-  const hoopNum = currentSequence[sequenceProgress];
-  const c = HOOP_COLORS[hoopNum];
   const panel = document.getElementById('colorFillPanel');
   const label = document.getElementById('colorRingLabel');
-  if (panel) panel.style.background = c.hex;
-  if (label) label.textContent = `RING ${hoopNum}`;
+  const flashChecks = document.getElementById('flashChecks');
+
+  if (difficulty === 'flashing') {
+    // In hidden phase — show grey panel with checkmarks
+    if (flashingPhase === 'hidden') {
+      if (panel) panel.style.background = '#e2e8f0';
+      if (label) label.textContent = '';
+      if (flashChecks) flashChecks.style.display = 'flex';
+      // Update checkmarks based on progress
+      for (let i = 0; i < 2; i++) {
+        const ck = document.getElementById('check' + i);
+        if (!ck) continue;
+        if (i < sequenceProgress) {
+          // Done — bright green
+          ck.style.color = '#16a34a';
+          ck.style.opacity = '1';
+          ck.style.transform = 'scale(1.1)';
+        } else {
+          // Pending — dim grey
+          ck.style.color = '#94a3b8';
+          ck.style.opacity = '0.25';
+          ck.style.transform = 'scale(0.9)';
+        }
+      }
+    }
+  } else {
+    // Normal modes — solid color fill showing current ring
+    if (flashChecks) flashChecks.style.display = 'none';
+    const hoopNum = currentSequence[sequenceProgress];
+    const c = HOOP_COLORS[hoopNum];
+    if (panel) panel.style.background = c.hex;
+    if (label) label.textContent = `RING ${hoopNum}`;
+  }
+}
+
+// Run the flash sequence — show each color for 2s then go hidden
+function runFlashSequence() {
+  const panel = document.getElementById('colorFillPanel');
+  const label = document.getElementById('colorRingLabel');
+  const flashChecks = document.getElementById('flashChecks');
+  flashingPhase = 'showing';
+
+  if (flashChecks) flashChecks.style.display = 'none';
+
+  let idx = 0;
+  function showNext() {
+    if (idx >= currentSequence.length) {
+      // All shown — go to hidden phase
+      flashingPhase = 'hidden';
+      if (panel) panel.style.background = '#e2e8f0';
+      if (label) label.textContent = '';
+      if (flashChecks) flashChecks.style.display = 'flex';
+      // Reset both checkmarks to dim
+      for (let i = 0; i < 2; i++) {
+        const ck = document.getElementById('check' + i);
+        if (ck) { ck.style.color = '#94a3b8'; ck.style.opacity = '0.25'; ck.style.transform = 'scale(0.9)'; }
+      }
+      // Now start the throw timer
+      colorTurnEndMs = Date.now() + colorThrowTimeSec * 1000;
+      colorAwaitingNext = false;
+      return;
+    }
+    const c = HOOP_COLORS[currentSequence[idx]];
+    if (panel) panel.style.background = c.hex;
+    if (label) label.textContent = `RING ${idx + 1} OF ${currentSequence.length}`;
+    idx++;
+    setTimeout(showNext, 2000);
+  }
+  showNext();
 }
 
 function startColorGame() {
@@ -1120,7 +1192,6 @@ function startColorBreather() {
   colorAwaitingNext = true;
   let count = 5;
 
-  // Show the next player banner and a big countdown on timer display
   updateColorBoard();
   const timerEl = document.getElementById('colorThrowTimerVal');
   const timerUnit = timerEl.nextElementSibling;
@@ -1129,26 +1200,35 @@ function startColorBreather() {
   timerEl.textContent = count;
   if (timerUnit) timerUnit.textContent = 'GET READY';
 
-  // Fill the left panel grey during breather
   const panel = document.getElementById('colorFillPanel');
   const label = document.getElementById('colorRingLabel');
+  const flashChecks = document.getElementById('flashChecks');
   if (panel) panel.style.background = '#e2e8f0';
   if (label) label.textContent = 'GET READY';
+  if (flashChecks) flashChecks.style.display = 'none';
 
   const breatherInterval = setInterval(() => {
     count--;
     if (count <= 0) {
       clearInterval(breatherInterval);
-      // Now actually start the turn
-      currentSequence  = generateSequence();
-      sequenceProgress = 0;
-      colorTurnEndMs   = Date.now() + colorThrowTimeSec * 1000;
-      colorAwaitingNext = false;
-      renderSequence();
-      // Restore timer styling
       timerEl.style.color = '';
       timerEl.className = 'timer-number';
       if (timerUnit) timerUnit.textContent = 'SECONDS';
+
+      // Generate sequence now
+      currentSequence  = generateSequence();
+      sequenceProgress = 0;
+
+      if (difficulty === 'flashing') {
+        // Show flash sequence first, then start timer after
+        timerEl.textContent = '—';
+        runFlashSequence();
+      } else {
+        colorTurnEndMs  = Date.now() + colorThrowTimeSec * 1000;
+        colorAwaitingNext = false;
+        renderSequence();
+        timerEl.textContent = colorThrowTimeSec;
+      }
     } else {
       timerEl.textContent = count;
     }
@@ -1245,13 +1325,13 @@ function handleArduinoMessage(msg) {
         sendToArduino('BEEP:SUCCESS');
         showToast('SEQUENCE DONE! 🎉', `Player ${colorCurrentPlayer} scores!`, 'score');
         colorAwaitingNext = true;
+        if (difficulty === 'flashing') renderSequence(); // light up final checkmark
         updateColorBoard();
         setTimeout(colorSwitch, 1900);
       } else {
-        // Advance to next color in sequence — update the fill panel
         soundPartialHit();
         sendToArduino('BEEP:CLICK');
-        renderSequence(); // shows the next color as the new fill
+        renderSequence(); // flashing: updates checkmark; others: next color fill
       }
     } else {
       const rightColor = HOOP_COLORS[expected];
